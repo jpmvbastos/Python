@@ -1,0 +1,282 @@
+# Run this code for PNAD-Contínua
+
+def ler_PNADcontinua(anos: list) -> pd.DataFrame:
+    '''Faz a leitura de arquivos da PNAD Contínua trimestral, diretamente do site do IBGE.
+    :param anos: Lista com os anos desejados da pesquisa.
+    :type anos: list
+    :return: Um dataframe com os dados agrupados para todos os anos informados.
+    :rtype: pd.DataFrame
+    Exemplo
+    -------
+    >> pnad = ler_PNADcontinua(anos=['2017','2018'])
+    '''
+
+    # opções iniciais
+    anos_all = [*range(2012,2021)]
+    anos_all = [str(a) for a in anos_all]
+
+    try:
+        for ano in anos:
+            assert ano in anos_all
+    except:
+        raise ValueError(f'Ano da pesquisa não disponível. Escolha entre {anos_all}')
+
+    url = 'ftp.ibge.gov.br'
+    ft = ftplib.FTP(url)
+    
+    # tenta se conectar ao site do IBGE
+    try:
+        ft.connect()
+        ft.login()
+    except Exception as e:
+        raise e
+
+    # pasta com os microdados
+    pasta = 'Trabalho_e_Rendimento/Pesquisa_Nacional_por_Amostra_de_Domicilios_continua/Trimestral/Microdados/' 
+    ft.cwd(pasta)
+
+    # pesquisa lista de arquivos
+    arquivos = []
+
+    for ano in anos:
+        ft.cwd(f'{ano}/')
+        tmp = ft.nlst()
+        [arquivos.append(f'/{ano}/{a}') for a in tmp]
+        ft.cwd('..')
+
+    ft.close()
+
+    # monta as URLs finais para o pandas
+    arquivos = ['ftp://'+url+'/'+pasta[:-1]+a for a in arquivos]
+
+    # dicionario da PNAD contínua
+    # http://downloads.ibge.gov.br/downloads_estatisticas.htm?caminho=Trabalho_e_Rendimento/Pesquisa_Nacional_por_Amostra_de_Domicilios_continua/Trimestral/Microdados/Documentacao
+
+    dic = [{'largura': 1, 'nome': 'Trimestre', 'posicao': 5},
+    {'largura': 2, 'nome': 'UF', 'posicao': 6},
+    {'largura': 2, 'nome': 'Capital', 'posicao': 8},
+    {'largura': 2, 'nome': 'RM_RIDE', 'posicao': 10},
+    {'largura': 9, 'nome': 'UPA', 'posicao': 12},
+    {'largura': 7, 'nome': 'Estrato', 'posicao': 21},
+    {'largura': 2, 'nome': 'V1008', 'posicao': 28},
+    {'largura': 2, 'nome': 'V1014', 'posicao': 30},
+    {'largura': 1, 'nome': 'V1016', 'posicao': 32},
+    {'largura': 1, 'nome': 'V1022', 'posicao': 33},
+    {'largura': 1, 'nome': 'V1023', 'posicao': 34},
+    {'largura': 15, 'nome': 'V1027', 'posicao': 35},
+    {'largura': 15, 'nome': 'V1028', 'posicao': 50},
+    {'largura': 9, 'nome': 'V1029', 'posicao': 65},
+    {'largura': 3, 'nome': 'posest', 'posicao': 74},
+    {'largura': 2, 'nome': 'V2001', 'posicao': 77},
+    {'largura': 2, 'nome': 'V2003', 'posicao': 79},
+    {'largura': 2, 'nome': 'V2005', 'posicao': 81},
+    {'largura': 1, 'nome': 'V2007', 'posicao': 83},
+    {'largura': 2, 'nome': 'V2008', 'posicao': 84},
+    {'largura': 2, 'nome': 'V20081', 'posicao': 86},
+    {'largura': 4, 'nome': 'V20082', 'posicao': 88},
+    {'largura': 3, 'nome': 'V2009', 'posicao': 92},
+    {'largura': 1, 'nome': 'V2010', 'posicao': 95},
+    {'largura': 1, 'nome': 'V3001', 'posicao': 96},
+    {'largura': 1, 'nome': 'V3002', 'posicao': 97},
+    {'largura': 1, 'nome': 'V3002A', 'posicao': 98},
+    {'largura': 2, 'nome': 'V3003', 'posicao': 99},
+    {'largura': 2, 'nome': 'V3003A', 'posicao': 101},
+    {'largura': 1, 'nome': 'V3004', 'posicao': 103},
+    {'largura': 1, 'nome': 'V3005', 'posicao': 104},
+    {'largura': 1, 'nome': 'V3005A', 'posicao': 105},
+    {'largura': 2, 'nome': 'V3006', 'posicao': 106},
+    {'largura': 1, 'nome': 'V3006A', 'posicao': 108},
+    {'largura': 1, 'nome': 'V3007', 'posicao': 109},
+    {'largura': 1, 'nome': 'V3008', 'posicao': 110},
+    {'largura': 2, 'nome': 'V3009', 'posicao': 111},
+    {'largura': 2, 'nome': 'V3009A', 'posicao': 113},
+    {'largura': 1, 'nome': 'V3010', 'posicao': 115},
+    {'largura': 1, 'nome': 'V3011', 'posicao': 116},
+    {'largura': 1, 'nome': 'V3011A', 'posicao': 117},
+    {'largura': 1, 'nome': 'V3012', 'posicao': 118},
+    {'largura': 2, 'nome': 'V3013', 'posicao': 119},
+    {'largura': 1, 'nome': 'V3013A', 'posicao': 121},
+    {'largura': 1, 'nome': 'V3013B', 'posicao': 122},
+    {'largura': 1, 'nome': 'V3014', 'posicao': 123},
+    {'largura': 1, 'nome': 'V4001', 'posicao': 124},
+    {'largura': 1, 'nome': 'V4002', 'posicao': 125},
+    {'largura': 1, 'nome': 'V4003', 'posicao': 126},
+    {'largura': 1, 'nome': 'V4004', 'posicao': 127},
+    {'largura': 1, 'nome': 'V4005', 'posicao': 128},
+    {'largura': 1, 'nome': 'V4006', 'posicao': 129},
+    {'largura': 1, 'nome': 'V4006A', 'posicao': 130},
+    {'largura': 1, 'nome': 'V4007', 'posicao': 131},
+    {'largura': 1, 'nome': 'V4008', 'posicao': 132},
+    {'largura': 2, 'nome': 'V40081', 'posicao': 133},
+    {'largura': 2, 'nome': 'V40082', 'posicao': 135},
+    {'largura': 2, 'nome': 'V40083', 'posicao': 137},
+    {'largura': 1, 'nome': 'V4009', 'posicao': 139},
+    {'largura': 4, 'nome': 'V4010', 'posicao': 140},
+    {'largura': 1, 'nome': 'V4012', 'posicao': 144},
+    {'largura': 1, 'nome': 'V40121', 'posicao': 145},
+    {'largura': 5, 'nome': 'V4013', 'posicao': 146},
+    {'largura': 1, 'nome': 'V40132', 'posicao': 151},
+    {'largura': 1, 'nome': 'V40132A', 'posicao': 152},
+    {'largura': 1, 'nome': 'V4014', 'posicao': 153},
+    {'largura': 1, 'nome': 'V4015', 'posicao': 154},
+    {'largura': 1, 'nome': 'V40151', 'posicao': 155},
+    {'largura': 1, 'nome': 'V401511', 'posicao': 156},
+    {'largura': 2, 'nome': 'V401512', 'posicao': 157},
+    {'largura': 1, 'nome': 'V4016', 'posicao': 159},
+    {'largura': 1, 'nome': 'V40161', 'posicao': 160},
+    {'largura': 2, 'nome': 'V40162', 'posicao': 161},
+    {'largura': 2, 'nome': 'V40163', 'posicao': 163},
+    {'largura': 1, 'nome': 'V4017', 'posicao': 165},
+    {'largura': 1, 'nome': 'V40171', 'posicao': 166},
+    {'largura': 1, 'nome': 'V401711', 'posicao': 167},
+    {'largura': 1, 'nome': 'V4018', 'posicao': 168},
+    {'largura': 1, 'nome': 'V40181', 'posicao': 169},
+    {'largura': 2, 'nome': 'V40182', 'posicao': 170},
+    {'largura': 2, 'nome': 'V40183', 'posicao': 172},
+    {'largura': 1, 'nome': 'V4019', 'posicao': 174},
+    {'largura': 1, 'nome': 'V4020', 'posicao': 175},
+    {'largura': 1, 'nome': 'V4021', 'posicao': 176},
+    {'largura': 1, 'nome': 'V4022', 'posicao': 177},
+    {'largura': 1, 'nome': 'V4024', 'posicao': 178},
+    {'largura': 1, 'nome': 'V4025', 'posicao': 179},
+    {'largura': 1, 'nome': 'V4026', 'posicao': 180},
+    {'largura': 1, 'nome': 'V4027', 'posicao': 181},
+    {'largura': 1, 'nome': 'V4028', 'posicao': 182},
+    {'largura': 1, 'nome': 'V4029', 'posicao': 183},
+    {'largura': 1, 'nome': 'V4032', 'posicao': 184},
+    {'largura': 1, 'nome': 'V4033', 'posicao': 185},
+    {'largura': 1, 'nome': 'V40331', 'posicao': 186},
+    {'largura': 1, 'nome': 'V403311', 'posicao': 187},
+    {'largura': 8, 'nome': 'V403312', 'posicao': 188},
+    {'largura': 1, 'nome': 'V40332', 'posicao': 196},
+    {'largura': 1, 'nome': 'V403321', 'posicao': 197},
+    {'largura': 8, 'nome': 'V403322', 'posicao': 198},
+    {'largura': 1, 'nome': 'V40333', 'posicao': 206},
+    {'largura': 1, 'nome': 'V403331', 'posicao': 207},
+    {'largura': 1, 'nome': 'V4034', 'posicao': 208},
+    {'largura': 1, 'nome': 'V40341', 'posicao': 209},
+    {'largura': 1, 'nome': 'V403411', 'posicao': 210},
+    {'largura': 8, 'nome': 'V403412', 'posicao': 211},
+    {'largura': 1, 'nome': 'V40342', 'posicao': 219},
+    {'largura': 1, 'nome': 'V403421', 'posicao': 220},
+    {'largura': 8, 'nome': 'V403422', 'posicao': 221},
+    {'largura': 3, 'nome': 'V4039', 'posicao': 229},
+    {'largura': 3, 'nome': 'V4039C', 'posicao': 232},
+    {'largura': 1, 'nome': 'V4040', 'posicao': 235},
+    {'largura': 2, 'nome': 'V40401', 'posicao': 236},
+    {'largura': 2, 'nome': 'V40402', 'posicao': 238},
+    {'largura': 2, 'nome': 'V40403', 'posicao': 240},
+    {'largura': 4, 'nome': 'V4041', 'posicao': 242},
+    {'largura': 1, 'nome': 'V4043', 'posicao': 246},
+    {'largura': 1, 'nome': 'V40431', 'posicao': 247},
+    {'largura': 5, 'nome': 'V4044', 'posicao': 248},
+    {'largura': 1, 'nome': 'V4045', 'posicao': 253},
+    {'largura': 1, 'nome': 'V4046', 'posicao': 254},
+    {'largura': 1, 'nome': 'V4047', 'posicao': 255},
+    {'largura': 1, 'nome': 'V4048', 'posicao': 256},
+    {'largura': 1, 'nome': 'V4049', 'posicao': 257},
+    {'largura': 1, 'nome': 'V4050', 'posicao': 258},
+    {'largura': 1, 'nome': 'V40501', 'posicao': 259},
+    {'largura': 1, 'nome': 'V405011', 'posicao': 260},
+    {'largura': 8, 'nome': 'V405012', 'posicao': 261},
+    {'largura': 1, 'nome': 'V40502', 'posicao': 269},
+    {'largura': 1, 'nome': 'V405021', 'posicao': 270},
+    {'largura': 8, 'nome': 'V405022', 'posicao': 271},
+    {'largura': 1, 'nome': 'V40503', 'posicao': 279},
+    {'largura': 1, 'nome': 'V405031', 'posicao': 280},
+    {'largura': 1, 'nome': 'V4051', 'posicao': 281},
+    {'largura': 1, 'nome': 'V40511', 'posicao': 282},
+    {'largura': 1, 'nome': 'V405111', 'posicao': 283},
+    {'largura': 8, 'nome': 'V405112', 'posicao': 284},
+    {'largura': 1, 'nome': 'V40512', 'posicao': 292},
+    {'largura': 1, 'nome': 'V405121', 'posicao': 293},
+    {'largura': 8, 'nome': 'V405122', 'posicao': 294},
+    {'largura': 3, 'nome': 'V4056', 'posicao': 302},
+    {'largura': 3, 'nome': 'V4056C', 'posicao': 305},
+    {'largura': 1, 'nome': 'V4057', 'posicao': 308},
+    {'largura': 1, 'nome': 'V4058', 'posicao': 309},
+    {'largura': 1, 'nome': 'V40581', 'posicao': 310},
+    {'largura': 1, 'nome': 'V405811', 'posicao': 311},
+    {'largura': 8, 'nome': 'V405812', 'posicao': 312},
+    {'largura': 1, 'nome': 'V40582', 'posicao': 320},
+    {'largura': 1, 'nome': 'V405821', 'posicao': 321},
+    {'largura': 8, 'nome': 'V405822', 'posicao': 322},
+    {'largura': 1, 'nome': 'V40583', 'posicao': 330},
+    {'largura': 1, 'nome': 'V405831', 'posicao': 331},
+    {'largura': 1, 'nome': 'V40584', 'posicao': 332},
+    {'largura': 1, 'nome': 'V4059', 'posicao': 333},
+    {'largura': 1, 'nome': 'V40591', 'posicao': 334},
+    {'largura': 1, 'nome': 'V405911', 'posicao': 335},
+    {'largura': 8, 'nome': 'V405912', 'posicao': 336},
+    {'largura': 1, 'nome': 'V40592', 'posicao': 344},
+    {'largura': 1, 'nome': 'V405921', 'posicao': 345},
+    {'largura': 8, 'nome': 'V405922', 'posicao': 346},
+    {'largura': 3, 'nome': 'V4062', 'posicao': 354},
+    {'largura': 3, 'nome': 'V4062C', 'posicao': 357},
+    {'largura': 1, 'nome': 'V4063', 'posicao': 360},
+    {'largura': 1, 'nome': 'V4063A', 'posicao': 361},
+    {'largura': 1, 'nome': 'V4064', 'posicao': 362},
+    {'largura': 1, 'nome': 'V4064A', 'posicao': 363},
+    {'largura': 1, 'nome': 'V4071', 'posicao': 364},
+    {'largura': 2, 'nome': 'V4072', 'posicao': 365},
+    {'largura': 1, 'nome': 'V4072A', 'posicao': 367},
+    {'largura': 1, 'nome': 'V4073', 'posicao': 368},
+    {'largura': 1, 'nome': 'V4074', 'posicao': 369},
+    {'largura': 2, 'nome': 'V4074A', 'posicao': 370},
+    {'largura': 1, 'nome': 'V4075A', 'posicao': 372},
+    {'largura': 2, 'nome': 'V4075A1', 'posicao': 373},
+    {'largura': 1, 'nome': 'V4076', 'posicao': 375},
+    {'largura': 2, 'nome': 'V40761', 'posicao': 376},
+    {'largura': 2, 'nome': 'V40762', 'posicao': 378},
+    {'largura': 2, 'nome': 'V40763', 'posicao': 380},
+    {'largura': 1, 'nome': 'V4077', 'posicao': 382},
+    {'largura': 1, 'nome': 'V4078', 'posicao': 383},
+    {'largura': 1, 'nome': 'V4078A', 'posicao': 384},
+    {'largura': 1, 'nome': 'V4082', 'posicao': 385},
+    {'largura': 2, 'nome': 'VD2002', 'posicao': 386},
+    {'largura': 2, 'nome': 'VD2003', 'posicao': 388},
+    {'largura': 1, 'nome': 'VD2004', 'posicao': 390},
+    {'largura': 1, 'nome': 'VD3004', 'posicao': 391},
+    {'largura': 2, 'nome': 'VD3005', 'posicao': 392},
+    {'largura': 1, 'nome': 'VD3006', 'posicao': 394},
+    {'largura': 1, 'nome': 'VD4001', 'posicao': 395},
+    {'largura': 1, 'nome': 'VD4002', 'posicao': 396},
+    {'largura': 1, 'nome': 'VD4003', 'posicao': 397},
+    {'largura': 1, 'nome': 'VD4004', 'posicao': 398},
+    {'largura': 1, 'nome': 'VD4004A', 'posicao': 399},
+    {'largura': 1, 'nome': 'VD4005', 'posicao': 400},
+    {'largura': 1, 'nome': 'VD4007', 'posicao': 401},
+    {'largura': 1, 'nome': 'VD4008', 'posicao': 402},
+    {'largura': 2, 'nome': 'VD4009', 'posicao': 403},
+    {'largura': 2, 'nome': 'VD4010', 'posicao': 405},
+    {'largura': 2, 'nome': 'VD4011', 'posicao': 407},
+    {'largura': 1, 'nome': 'VD4012', 'posicao': 409},
+    {'largura': 1, 'nome': 'VD4013', 'posicao': 410},
+    {'largura': 1, 'nome': 'VD4014', 'posicao': 411},
+    {'largura': 1, 'nome': 'VD4015', 'posicao': 412},
+    {'largura': 8, 'nome': 'VD4016', 'posicao': 413},
+    {'largura': 8, 'nome': 'VD4017', 'posicao': 421},
+    {'largura': 1, 'nome': 'VD4018', 'posicao': 429},
+    {'largura': 8, 'nome': 'VD4019', 'posicao': 430},
+    {'largura': 8, 'nome': 'VD4020', 'posicao': 438},
+    {'largura': 1, 'nome': 'VD4023', 'posicao': 446},
+    {'largura': 1, 'nome': 'VD4030', 'posicao': 447},
+    {'largura': 3, 'nome': 'VD4031', 'posicao': 448},
+    {'largura': 3, 'nome': 'VD4032', 'posicao': 451},
+    {'largura': 3, 'nome': 'VD4033', 'posicao': 454},
+    {'largura': 3, 'nome': 'VD4034', 'posicao': 457},
+    {'largura': 3, 'nome': 'VD4035', 'posicao': 460},
+    {'largura': 1, 'nome': 'VD4036', 'posicao': 463},
+    {'largura': 1, 'nome': 'VD4037', 'posicao': 464}]
+
+    # faz a leitura dos arquivos
+    df = pd.DataFrame()
+
+    # junta todos os arquivos
+    for a in arquivos:
+        print(f'''Carregando arquivo {a.split('/')[-1]}''')
+        df_tmp = pd.read_fwf(a, widths=[v['largura'] for v in dic], header=None)
+        df_tmp.columns = [v['nome'] for v in dic]
+        df = pd.concat([df, df_tmp], axis=1)
+
+    return df
